@@ -1,0 +1,351 @@
+---
+  
+- name: User_Creation
+  hosts: localhost
+#UserInput
+  vars_prompt:
+    - name: branch_name
+      prompt: "Enter your Branch name"
+      private: no
+    - name: Stageorprod
+      prompt: "Press s for staging and p for prod server access"
+      private: no
+    - name: dir_name
+      prompt: "Directory name"
+      private: no
+
+    - name: public_key
+      prompt: "Public key"
+      private: no
+
+    - name: emp_name
+      prompt: "Enter Employee name:"
+      private: no
+
+    - name: emp_username
+      prompt: "Enter Employee username"
+      private: no
+
+    - name: emp_id
+      prompt: "Enter Employee ID"
+      private: no
+
+    - name: emp_staff
+      prompt: "type staff"
+      private: no
+
+    - name: vertical
+      prompt: "Enter vertical name"
+      private: no  
+
+   
+
+  tasks:
+#Creating directory
+     - name: Creating Paytm_git_repo
+       file:
+         path: /home/$USER/paytm_git_repo
+         state: directory
+#Cloning the repo
+     - name: Cloning the repo
+       command: chdir=/home/$USER/paytm_git_repo git clone "https://github.com/Thamaraimeena/automate.git"
+#Branch creation and checkout
+     - name: Directory change
+       command: chdir=/home/$USER/paytm_git_repo/automate git checkout -b {{branch_name}}
+#Staging gateway:
+     - name: Staging
+       stat:
+         path: /home/$USER/paytm_git_repo/automate/ansible_staging/files/users/{{dir_name}}
+       register: dir_duplicate
+       when: Stageorprod == "s"
+
+     - name: Create directory if doesn't exist
+       file:
+         path: /home/$USER/paytm_git_repo/automate/ansible_staging/files/users/{{dir_name}}
+         state: directory
+       when: Stageorprod == "s" or dir_duplicate == False
+
+     - name: Key file 
+       file:
+         path: /home/$USER/paytm_git_repo/automate/ansible_staging/files/users/{{dir_name}}/id_rsa.pub
+         state: touch
+       when: Stageorprod == "s" or dir_duplicate == False
+
+
+
+
+#Production Gateway:
+     - name: Diretory change to Production
+       stat:
+         path: /home/$USER/paytm_git_repo/automate/ansible/files/users/{{dir_name}}
+       register: dir1_duplicate
+       when: Stageorprod == "p"
+
+     - name: Create prod user directory if not exists
+       file:
+          path: /home/$USER/paytm_git_repo/automate/ansible/files/users/{{dir_name}}
+          state: directory
+       when: dir1_duplicate == False or Stageorprod == "p"
+     
+     - name: Key file
+       file:
+         path: /home/$USER/paytm_git_repo/automate/ansible/files/users/{{dir_name}}/id_rsa.pub
+         state: touch
+       when: dir1_duplicate == False or Stageorprod == "p"
+
+#Adding the key in id_rsa.pub under user directory
+
+     - lineinfile:
+         path: /home/$USER/paytm_git_repo/automate/ansible_staging/files/users/{{dir_name}}/id_rsa.pub
+         state: present
+         line: '{{public_key}}'
+       when: Stageorprod == "s"
+
+     - lineinfile:
+         path: /home/$USER/paytm_git_repo/automate/ansible/files/users/{{dir_name}}/id_rsa.pub
+         state: present
+         line: '{{public_key}}'
+       when: Stageorprod == "p"
+
+#Adding the Employee details in main.yml file for staging
+      
+     - name: Employee details in staging Sudoers
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^sudoers:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "sudoers" and Stageorprod == "s"  
+
+     - name: Employee details in staging buses
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^buses:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "buses" and Stageorprod == "s" 
+
+     - name: Employee details in flights
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^flights:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "flights" and Stageorprod == "s" 
+
+
+     - name: Employee details in staging trains
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^trains:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "trains" and Stageorprod == "s" 
+
+
+
+     - name: Employee details in staging qa
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^qa:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "qa" and Stageorprod == "s" 
+
+     - name: Employee details in staging suppengg
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^supportengg:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "supportengg" and Stageorprod == "s" 
+
+     - name: Employee details in staging platform
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^platform:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "platform" and Stageorprod == "s" 
+
+     - name: Employee details in staging growth
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^growth:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "growth" and Stageorprod == "s" 
+
+     - name: Employee details in staging hotels
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^hotels:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "hotels" and Stageorprod == "s" 
+
+#Adding the Employee details in main.yml file for prod
+
+      
+     - name: Employee details in prod Sudoers
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^sudoers:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "sudoers" and Stageorprod == "p"  
+
+     - name: Employee details in prod buses
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^buses:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "buses" and Stageorprod == "p" 
+
+     - name: Employee details in prod flights
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^flights:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "flights" and Stageorprod == "p" 
+
+
+     - name: Employee details in prod trains
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^trains:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "trains" and Stageorprod == "p" 
+
+
+
+     - name: Employee details in prod qa
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^qa:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "qa" and Stageorprod == "p" 
+
+     - name: Employee details in prod suppengg
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible_staging/roles/sudoers/defaults/main.yml
+         insertafter: "^supportengg:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "supportengg" and Stageorprod == "p" 
+
+     - name: Employee details in prod platform
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^platform:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "platform" and Stageorprod == "p" 
+
+     - name: Employee details in prod growth
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^growth:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "growth" and Stageorprod == "p" 
+
+     - name: Employee details in prod hotels
+       blockinfile:
+         dest: /home/$USER/paytm_git_repo/automate/ansible/roles/sudoers/defaults/main.yml
+         insertafter: "^hotels:"
+         marker: "     "
+         block: |
+            -  name: "{{ emp_name }}"
+               username: "{{ emp_username }}"
+               emp_id: "{{ emp_id }}"
+               group: "{{ emp_staff }}"
+       when: vertical == "hotels" and Stageorprod == "p" 
+
+
+
+#git status
+     - name: git status
+       command: chdir=/home/$USER/paytm_git_repo/automate git status
+#git add 
+     - name: git add
+       command: chdir=/home/$USER/paytm_git_repo/automate git add -f .
+#git commit
+     - name: git commit
+       command: chdir=/home/$USER/paytm_git_repo/automate git commit -m "Server access for {{emp_name}}"
+#git push
+     - name: git push
+       command: chdir=/home/$USER/paytm_git_repo/automate git push origin {{ branch_name }}
+
